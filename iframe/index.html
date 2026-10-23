@@ -1,0 +1,1147 @@
+<!doctype html>
+<html lang="zh-Hans">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>规则配置管理</title>
+		<style>
+			/* 令牌：遵循嘉立创EDA UI 设计规范（Light） */
+			:root {
+				--brand: #1890ff;
+				--brand-hover: #40a9ff;
+				--brand-active: #096dd9;
+				--danger: #fd4f54;
+				--success: #52c41a;
+				--warn: #fa8c16;
+				--text: rgba(0, 0, 0, .88);
+				--text-2: rgba(10, 13, 51, .6);
+				--text-3: rgba(10, 13, 51, .4);
+				--border: #d9d9d9;
+				--border-soft: #e9e9e9;
+				--bg: #fff;
+				--bg-soft: #fafafa;
+				--panel-title: #f1f1f1;
+				--bg-hover: #e6f7ff;
+				--radius: 2px;
+				--focus: 0 0 0 2px rgba(24, 144, 255, .2);
+			}
+			* { box-sizing: border-box; }
+			html, body { height: 100%; margin: 0; }
+			body {
+				font: 12px/20px "Microsoft YaHei", "Noto Sans SC", system-ui, sans-serif;
+				color: var(--text);
+				background: var(--bg);
+				overflow: hidden;
+			}
+			.app { display: flex; flex-direction: column; height: 100%; }
+
+			/* 步骤条 */
+			.steps { display: flex; align-items: center; gap: 24px; height: 44px; padding: 0 16px; border-bottom: 1px solid var(--border-soft); flex-shrink: 0; }
+			.step { display: flex; align-items: center; gap: 8px; color: var(--text-3); }
+			.step__no { width: 20px; height: 20px; border: 1px solid var(--border); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+			.step.is-active { color: var(--text); }
+			.step.is-active .step__no { background: var(--brand); border-color: var(--brand); color: #fff; }
+			.step.is-done { color: var(--text-2); }
+			.step.is-done .step__no { background: var(--success); border-color: var(--success); color: #fff; }
+
+			/* 内容区 */
+			.content { flex: 1; min-height: 0; overflow: auto; padding: 16px; }
+			.footer { flex-shrink: 0; display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding: 16px; border-top: 1px solid var(--border-soft); position: relative; z-index: 20; background: var(--bg); }
+			.footer__left { margin-right: auto; color: var(--text-2); }
+
+			h2 { font-size: 14px; line-height: 22px; margin: 0 0 8px; font-weight: 600; }
+			p { margin: 0 0 8px; color: var(--text-2); }
+			.muted { color: var(--text-2); }
+			.mono { font-family: Consolas, "Courier New", monospace; }
+
+			/* 按钮 */
+			.btn { height: 28px; min-width: 96px; padding: 0 10px; border-radius: var(--radius); font-size: 12px; cursor: pointer; outline: none; border: 1px solid var(--border); background: var(--bg); color: var(--text); transition: all .2s ease; }
+			.btn:hover { border-color: var(--brand); color: var(--brand); }
+			.btn:focus-visible { box-shadow: var(--focus); }
+			.btn--primary { background: var(--brand); border-color: var(--brand); color: #fff; }
+			.btn--primary:hover { background: var(--brand-hover); border-color: var(--brand-hover); color: #fff; }
+			.btn--primary:active { background: var(--brand-active); border-color: var(--brand-active); }
+			.btn:disabled { background: #f1f1f1; border-color: var(--border); color: #868686; cursor: not-allowed; }
+			.btn--sm { height: 24px; min-width: 0; padding: 0 8px; }
+
+			/* 卡片 / 面板 */
+			.panel { border: 1px solid var(--border-soft); border-radius: var(--radius); }
+			.panel__head { height: 28px; display: flex; align-items: center; justify-content: space-between; padding: 0 8px; background: var(--panel-title); border-bottom: 1px solid var(--border-soft); font-weight: 600; }
+			.panel__body { padding: 16px; }
+
+			/* 属性行 */
+			.row { display: flex; align-items: flex-start; gap: 8px; min-height: 24px; }
+			.row + .row { margin-top: 8px; }
+			.row__key { width: 88px; flex-shrink: 0; color: var(--text-2); }
+			.row__value { flex: 1; min-width: 0; word-break: break-all; }
+
+			/* 勾选框 */
+			input[type="checkbox"].cb { appearance: none; -webkit-appearance: none; width: 14px; height: 14px; margin: 0; flex-shrink: 0; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg); cursor: pointer; position: relative; }
+			input[type="checkbox"].cb:hover { border-color: var(--brand); }
+			input[type="checkbox"].cb:checked { background: var(--brand); border-color: var(--brand); }
+			input[type="checkbox"].cb:checked::after { content: ""; position: absolute; left: 4px; top: 1px; width: 3px; height: 7px; border-right: 1.5px solid #fff; border-bottom: 1.5px solid #fff; transform: rotate(45deg); }
+			input[type="checkbox"].cb:focus-visible { box-shadow: var(--focus); }
+			.check { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+			.check-row { display: flex; flex-wrap: wrap; gap: 8px 24px; }
+			.check__text { white-space: nowrap; }
+
+			/* 输入框 */
+			.input { height: 24px; width: 100%; padding: 0 8px; border: 1px solid var(--border); border-radius: var(--radius); font: inherit; color: inherit; outline: none; background: var(--bg); }
+			.input:hover { border-color: var(--brand-hover); }
+			.input:focus { border-color: var(--brand); box-shadow: var(--focus); }
+
+			/* 标签 */
+			.tag { display: inline-flex; align-items: center; height: 18px; padding: 0 6px; border: 1px solid var(--border); border-radius: var(--radius); font-size: 12px; line-height: 16px; color: var(--text-2); background: var(--bg); white-space: nowrap; }
+			.tag--added { border-color: var(--brand); color: var(--brand); }
+			.tag--modified { border-color: var(--warn); color: var(--warn); }
+			.tag--removed { border-color: var(--danger); color: var(--danger); }
+			.tag--unsupported { border-color: var(--danger); color: var(--danger); }
+			.tag--skipped { border-color: var(--border); color: var(--text-2); }
+			.tag--kept { border-color: var(--border); color: var(--text-2); }
+			.tag--ok { border-color: var(--success); color: var(--success); }
+			.tag--fail { border-color: var(--danger); color: var(--danger); }
+
+			/* 统计 */
+			.stats { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+			.stat { flex: 1 1 120px; border: 1px solid var(--border-soft); border-radius: var(--radius); padding: 8px 12px; }
+			.stat__n { font-size: 14px; line-height: 22px; font-weight: 600; }
+			.stat__k { color: var(--text-2); }
+			.stat--added .stat__n { color: var(--brand); }
+			.stat--modified .stat__n { color: var(--warn); }
+			.stat--removed .stat__n, .stat--unsupported .stat__n { color: var(--danger); }
+			.stat--ok .stat__n { color: var(--success); }
+
+			/* 提示条 */
+			.notice { display: flex; gap: 8px; padding: 8px 12px; border: 1px solid var(--border-soft); border-radius: var(--radius); margin-bottom: 8px; }
+			.notice--warn { background: #fffbe6; border-color: #fa8c16; }
+			.notice--error { background: #fff2f0; border-color: #f5222d; }
+			.notice--success { background: #f5fcfa; border-color: #52c41a; }
+			.notice--info { background: #e6f7ff; border-color: #1890ff; }
+			.notice__text { flex: 1; min-width: 0; word-break: break-word; }
+
+			/* 差异树 */
+			.tree { border: 1px solid var(--border-soft); border-radius: var(--radius); overflow: hidden; }
+			.tree__row { display: flex; align-items: flex-start; gap: 8px; padding: 6px 8px; border-bottom: 1px solid var(--border-soft); }
+			.tree__row:last-child { border-bottom: none; }
+			.tree__row--group { background: var(--bg-soft); font-weight: 600; cursor: pointer; }
+			.tree__row--entry { cursor: default; }
+			.tree__row--field { background: var(--bg-soft); color: var(--text-2); cursor: default; }
+			.tree__row--clickable { cursor: pointer; }
+			.tree__row--clickable:hover { background: var(--bg-hover); }
+			.tree__main { flex: 1; min-width: 0; word-break: break-all; }
+			.tree__note { color: var(--text-2); }
+			.tree__indent { margin-left: 24px; }
+			.tree__indent2 { margin-left: 48px; }
+			.chev { width: 12px; height: 12px; flex-shrink: 0; margin-top: 4px; transition: transform .2s ease; color: var(--text-2); }
+			.chev--open { transform: rotate(90deg); }
+			.chev--hidden { visibility: hidden; }
+
+			.log { margin: 0; padding: 12px; max-height: 220px; overflow: auto; background: var(--bg-soft); border: 1px solid var(--border-soft); border-radius: var(--radius); white-space: pre-wrap; word-break: break-all; font-family: Consolas, "Courier New", monospace; }
+
+			/* 网络集合规则 */
+			.np-area { height: auto; min-height: 56px; max-height: 120px; padding: 4px 8px; resize: vertical; line-height: 18px; font-family: Consolas, "Courier New", monospace; }
+			.np-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+			.np-chip { height: 24px; padding: 0 12px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg); color: var(--text); font-size: 12px; cursor: pointer; outline: none; }
+			.np-chip:hover { border-color: var(--brand); color: var(--brand); }
+			.np-chip:focus-visible { box-shadow: var(--focus); }
+			.np-chip.is-active { background: var(--brand); border-color: var(--brand); color: #fff; }
+			.np-preview { margin-top: 4px; color: var(--text-2); }
+			.np-preview strong { color: var(--brand); font-weight: 600; }
+
+			/* 导出弹窗双栏工作台 */
+			.view-export { overflow: hidden; padding: 12px 16px; }
+			.export-layout { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); gap: 12px; height: 100%; min-height: 0; }
+			.export-top { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 12px; min-width: 0; }
+			.export-top .panel { display: flex; flex-direction: column; min-width: 0; }
+			.export-top .panel__body { padding: 10px 16px; }
+			.export-main, .export-side { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+			.export-main { grid-column: 1; grid-row: 2; }
+			.export-side { grid-column: 2; grid-row: 2; }
+			.export-main .panel, .export-side .panel { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+			.export-main .panel__body { flex: 1; display: flex; flex-direction: column; gap: 10px; min-height: 0; padding: 12px 16px; overflow: hidden; }
+			.export-side { gap: 8px; }
+			.export-side .panel__body { flex: 1; min-height: 0; padding: 12px 16px; overflow: auto; }
+			.field-label { color: var(--text-2); margin-bottom: 4px; }
+			.np-meta-grid, .np-input-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 12px; flex-shrink: 0; }
+			.np-meta-grid .np-chips { max-height: 52px; overflow: auto; }
+			.np-area { height: 52px; min-height: 52px; max-height: 52px; overflow: auto; padding: 4px 8px; resize: none; line-height: 18px; font-family: Consolas, "Courier New", monospace; }
+			.np-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+			.np-action-cluster { flex: 1; display: flex; align-items: center; gap: 8px; min-width: 0; padding: 2px; background: var(--bg-soft); border: 1px solid var(--border-soft); border-radius: var(--radius); }
+			.np-select { position: relative; flex: 1; min-width: 160px; }
+			.np-select-trigger { width: 100%; height: 24px; display: flex; align-items: center; gap: 6px; padding: 0 8px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg); color: var(--text); font: inherit; text-align: left; cursor: pointer; outline: none; }
+			.np-select-trigger:hover { border-color: var(--brand-hover); }
+			.np-select-trigger:focus-visible { border-color: var(--brand); box-shadow: var(--focus); }
+			.np-select-trigger:disabled { background: #f1f1f1; color: #868686; cursor: not-allowed; }
+			.np-select-label { color: var(--text-2); flex-shrink: 0; }
+			.np-select-value { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+			.np-select-arrow { width: 0; height: 0; border-right: 4px solid transparent; border-left: 4px solid transparent; border-top: 5px solid var(--text-2); flex-shrink: 0; }
+			.np-select-menu { position: absolute; left: 0; right: 0; bottom: calc(100% + 4px); z-index: 5; max-height: 160px; overflow: auto; background: var(--bg); border: 1px solid var(--border); box-shadow: 0 1px 6px rgba(0, 0, 0, .2); }
+			.np-select-option { width: 100%; min-height: 28px; display: block; padding: 4px 8px; border: none; background: transparent; color: var(--text); font: inherit; line-height: 20px; text-align: left; cursor: pointer; word-break: break-all; }
+			.np-select-option:hover { background: var(--bg-hover); color: var(--brand); }
+			.np-select-option.is-selected { background: var(--bg-hover); color: var(--brand); font-weight: 600; }
+			.np-add { flex-shrink: 0; }
+			.np-drafts { flex: 1; min-height: 0; overflow: auto; border: 1px solid var(--border-soft); }
+			.np-draft { display: flex; align-items: center; gap: 8px; padding: 5px 8px; }
+			.np-draft + .np-draft { border-top: 1px solid var(--border-soft); }
+			.np-draft span { flex: 1; min-width: 0; word-break: break-all; }
+			.summary-chips { display: flex; align-items: flex-start; gap: 6px; flex-wrap: wrap; }
+			.summary-chip { display: inline-flex; align-items: center; height: 20px; padding: 0 6px; border: 1px solid var(--border-soft); border-radius: var(--radius); background: var(--bg-soft); color: var(--text); white-space: nowrap; }
+			.summary-toggle { height: 20px; min-width: 0; padding: 0 6px; border-radius: var(--radius); }
+
+			/* 遮罩 */
+			.mask { position: fixed; inset: 0; background: rgba(255, 255, 255, .7); display: flex; align-items: center; justify-content: center; gap: 8px; z-index: 10; }
+			.spinner { width: 20px; height: 20px; border: 2px solid var(--border); border-top-color: var(--brand); border-radius: 50%; animation: rotation 1.4s linear infinite; }
+			@keyframes rotation { from { transform: rotate(0); } to { transform: rotate(360deg); } }
+		</style>
+	</head>
+	<body>
+		<div class="app">
+			<div class="steps" id="steps"></div>
+			<div class="content" id="content"></div>
+			<div class="footer" id="footer"></div>
+		</div>
+		<script>
+			(function () {
+				'use strict';
+
+				var HOST_KEY = 'rcm:host';
+				var UI_KEY = 'rcm:ui';
+
+				// ---------- 文案 ----------
+				var I18N = {
+					'zh-Hans': {
+						'step.pickImport': '选择文件',
+						'step.preview': '预览差异',
+						'step.apply': '执行导入',
+						'step.pickExport': '选择内容',
+						'step.export': '导出',
+						'step.done': '完成',
+						'step.npFill': '填写集合',
+						'step.npWrite': '确认写入',
+						'kind.added': '新增',
+						'kind.modified': '修改',
+						'kind.removed': '删除',
+						'kind.kept': '保留',
+						'kind.skipped': '跳过',
+						'kind.unsupported': '不支持',
+						'busy.default': '处理中…',
+						'busy.footer': '如果长时间没有反应，可以取消后重试。',
+						'btn.cancel': '取消',
+						'btn.pick': '选择文件',
+						'btn.repick': '重新选择',
+						'btn.preview': '下一步：预览差异',
+						'btn.export': '开始导出',
+						'btn.back': '返回',
+						'btn.apply': '确认导入',
+						'btn.restore': '还原到导入前',
+						'btn.copyLog': '复制日志',
+						'btn.done': '完成',
+						'import.title': '选择要导入的配置文件',
+						'import.desc': '支持本扩展导出的配置集，也兼容嘉立创EDA 内置「导出配置」的裸规则文件。',
+						'import.empty': '尚未选择文件。',
+						'import.fileInfo': '文件信息',
+						'import.fileName': '文件名',
+						'import.size': '大小',
+						'import.modules': '包含模块',
+						'import.unit': '导出单位',
+						'import.edaVersion': '导出时版本',
+						'import.exportedAt': '导出时间',
+						'import.hint': '选择文件后会先做差异预览，确认后才写入。',
+						'export.title': '选择要导出的内容',
+						'export.desc': '按模块导出为单个 JSON 文件，便于在团队内共享。',
+						'export.modules': '模块',
+						'export.remembered': '勾选会被记住，下次自动沿用',
+						'export.fileName': '输出文件名',
+						'export.hint': '导出只读取当前 PCB，不会修改任何规则。',
+						'export.summaryTitle': '这份文件将包含',
+						'export.summaryEmpty': '当前勾选的模块没有可导出的内容。',
+						'export.andMore': '…等 ${1} 个',
+						'export.withDrafts': '（含附加 ${1} 组）',
+						'export.ruleTotal': '共 ${1} 条',
+						'export.expand': '展开全部（${1} 项）',
+						'export.collapse': '收起',
+						'export.custom': '自定义 ${1}',
+						'npd.title': '附加网络集合规则',
+						'npd.draftCount': '${1} 组草稿',
+						'npd.add': '添加到导出',
+						'npd.importTable': '导入表格（CSV）',
+						'npd.empty': '还没有附加网络对。',
+						'npd.item': '分组 ${1} / 规则 ${2}：A ${3} 个 × B ${4} 个',
+						'npd.needNets': '请至少为一个集合填写网络名。',
+						'npd.classA': '集合A网络类（可选）',
+						'npd.classB': '集合B网络类（可选）',
+						'npd.classDesc': '类名与集合一一对应：填了类名的集合，导入时其网络会加入这个新建（或同名已有）网络类，任一网络已属于其他网络类则该侧不建类并在日志提示。两侧都填集合时，没填类名的一侧按具体网络逐条展开，形成「类 ↔ 网络」组合；若类的一侧冲突回退，则两侧都按逐条网络对展开。只填一个集合时：填类名仅建类，不填类名则这些网络会作为「网络规则」条目写入文件。导入只处理目标板上实际存在的网络。',
+						'npd.itemSingle': '分组 ${1} / 规则 ${2}：仅集合${3} ${4} 个',
+						'npd.toClass': '网络类 ${1}',
+						'npd.toNetRules': '写入网络规则',
+						'preview.same': '当前 PCB 与配置文件完全一致，无需写入。',
+						'preview.title': '差异明细',
+						'preview.willWrite': '（将写入 ${1} 项）',
+						'preview.groups': '共 ${1} 个模块有差异',
+						'preview.expandAll': '展开/收起全部',
+						'preview.hint': '写入前请确认差异。导入以「与配置文件一致」为目标。',
+						'result.exportDone': '导出完成',
+						'result.importDone': '导入完成',
+						'result.importPartial': '导入未完全成功',
+						'result.netpairDone': '网络集合规则已写入',
+						'result.restored': '已还原到导入前的状态',
+						'result.ok': '成功',
+						'result.fail': '失败',
+						'result.saved': '已导出：',
+						'result.residualLeft': '仍有 ${1} 项未能完全一致：新增 ${2} / 修改 ${3} / 删除 ${4} / 跳过 ${5} / 不支持 ${6}。这些通常是平台限制（如网络规则无法删除条目、本机版本没有的分组）。',
+						'result.residualNone': '导入后已与配置文件完全一致。',
+						'result.log': '日志',
+						'result.exportHint': '可继续导出其他模块。',
+						'result.importHint': '如需重来，可返回重新选择文件。',
+						'np.title': '网络集合规则',
+						'np.desc': '填入网络集合（用 / 或空格分隔，忽略大小写）：两侧都填时展开为两两之间的网络-网络规则；只填一个集合时，填类名仅创建网络类，不填类名则写入这些网络的网络规则分配。可为每个集合指定可选网络类名。当前 PCB 不存在的网络会被跳过并在日志汇总。',
+						'np.classDesc': '类名与集合一一对应：填了类名的集合，其网络会加入这个新建（或同名已有）网络类；任一网络已属于其他网络类，则该侧不建类、按具体网络逐条写入并在日志提示。两侧都填集合时，没填类名的一侧按具体网络逐条展开，形成「类 ↔ 网络」组合；只填一个集合时：填类名仅建类，不填类名则这些网络写入网络规则分配。当前 PCB 不存在的网络会被跳过。',
+						'np.group': '规则分组',
+						'np.setA': '集合A',
+						'np.setB': '集合B',
+						'np.rule': '分配规则',
+						'np.ruleNone': '该分组还没有任何规则；请先在「规则管理」中创建规则，再回来写入。',
+						'np.previewNone': '输入集合后会自动显示展开预览。',
+						'np.preview': '展开预览：集合A ${1} 个网络 × 集合B ${2} 个网络 = ${3} 对',
+						'np.missing': '缺失网络（将跳过）：',
+						'np.btnWrite': '展开并写入',
+						'np.importTable': '导入表格（CSV）',
+						'np.resultHint': '如需继续添加，可返回再写一组。',
+						'btn.again': '再写一组',
+						'btn.delete': '删除',
+						'misc.waiting': '等待界面数据…',
+						'toast.logCopied': '日志已复制到剪贴板',
+						'toast.copyFailed': '复制失败，请手动选择日志文本',
+						'toast.copyFailedDetail': '复制失败：'
+					},
+					en: {
+						'step.pickImport': 'Choose file',
+						'step.preview': 'Preview',
+						'step.apply': 'Import',
+						'step.pickExport': 'Choose content',
+						'step.export': 'Export',
+						'step.done': 'Done',
+						'step.npFill': 'Enter sets',
+						'step.npWrite': 'Write',
+						'kind.added': 'Added',
+						'kind.modified': 'Modified',
+						'kind.removed': 'Removed',
+						'kind.kept': 'Kept',
+						'kind.skipped': 'Skipped',
+						'kind.unsupported': 'Unsupported',
+						'busy.default': 'Working…',
+						'busy.footer': 'If nothing happens for a while, cancel and try again.',
+						'btn.cancel': 'Cancel',
+						'btn.pick': 'Choose file',
+						'btn.repick': 'Choose another',
+						'btn.preview': 'Next: preview differences',
+						'btn.export': 'Export',
+						'btn.back': 'Back',
+						'btn.apply': 'Import',
+						'btn.restore': 'Roll back to before import',
+						'btn.copyLog': 'Copy log',
+						'btn.done': 'Done',
+						'import.title': 'Choose a configuration file to import',
+						'import.desc': 'Accepts configuration sets exported by this extension, and raw rule files exported by the built-in EasyEDA "Export configuration".',
+						'import.empty': 'No file selected yet.',
+						'import.fileInfo': 'File',
+						'import.fileName': 'Name',
+						'import.size': 'Size',
+						'import.modules': 'Modules',
+						'import.unit': 'Unit',
+						'import.edaVersion': 'EDA version',
+						'import.exportedAt': 'Exported at',
+						'import.hint': 'Nothing is written before you review the preview and confirm.',
+						'export.title': 'Choose what to export',
+						'export.desc': 'Exports the selected modules into one JSON file that is easy to share inside a team.',
+						'export.modules': 'Modules',
+						'export.remembered': 'Your selection is remembered for next time',
+						'export.fileName': 'File name',
+						'export.hint': 'Export only reads the current PCB and changes nothing.',
+						'export.summaryTitle': 'This file will contain',
+						'export.summaryEmpty': 'The selected modules have no exportable content.',
+						'export.andMore': '…and ${1} more',
+						'export.withDrafts': '(plus ${1} draft pair(s))',
+						'export.ruleTotal': '${1} total',
+						'export.expand': 'Expand all (${1})',
+						'export.collapse': 'Collapse',
+						'export.custom': '${1} custom',
+						'npd.title': 'Extra net-set rules',
+						'npd.draftCount': '${1} draft(s)',
+						'npd.add': 'Add to export',
+						'npd.importTable': 'Import table (CSV)',
+						'npd.empty': 'No extra net pairs yet.',
+						'npd.item': 'Group ${1} / rule ${2}: A ${3} × B ${4}',
+						'npd.needNets': 'Enter nets in at least one set.',
+						'npd.classA': 'Set A net class (optional)',
+						'npd.classB': 'Set B net class (optional)',
+						'npd.classDesc': 'Each class name maps to its own set: on import the set nets join this new (or same-name) net class; if any net already belongs to another class, that side skips class creation and is noted in the log. When both sets are filled, the side without a class name expands into individual nets (class-to-net rules); if the class side falls back, both sides expand into individual pairs. With a single set: a class name only creates the class; without one the nets are written as net rules entries. Only nets that exist on the target PCB are imported.',
+						'npd.itemSingle': 'Group ${1} / rule ${2}: set ${3} only, ${4} net(s)',
+						'npd.toClass': 'Class ${1}',
+						'npd.toNetRules': 'Net rules',
+						'preview.same': 'The PCB already matches the configuration file; nothing to write.',
+						'preview.title': 'Difference details',
+						'preview.willWrite': ' (${1} item(s) will be written)',
+						'preview.groups': '${1} module(s) contain differences',
+						'preview.expandAll': 'Expand / collapse all',
+						'preview.hint': 'Review the differences before writing. The goal is to match the configuration file.',
+						'result.exportDone': 'Export finished',
+						'result.importDone': 'Import finished',
+						'result.importPartial': 'Import finished with issues',
+						'result.netpairDone': 'Net-set rules written',
+						'result.restored': 'Rolled back to the state before import',
+						'result.ok': 'OK',
+						'result.fail': 'Failed',
+						'result.saved': 'Exported: ',
+						'result.residualLeft': '${1} item(s) still differ: added ${2} / modified ${3} / removed ${4} / skipped ${5} / unsupported ${6}. These are usually platform limits (such as rules that cannot be deleted, or groups missing in this EDA version).',
+						'result.residualNone': 'The PCB now matches the configuration file.',
+						'result.log': 'Log',
+						'result.exportHint': 'You can export other modules as well.',
+						'result.importHint': 'To start over, go back and choose another file.',
+						'np.title': 'Net-set rules',
+						'np.desc': 'Enter net sets (separated by / or space, case-insensitive). With both sets filled they expand into net-to-net rules for every cross pair; with a single set, a class name only creates the net class, otherwise the nets get net-rule entries. Optional class names map to each set. Nets missing on this PCB are skipped and listed in the log.',
+						'np.classDesc': 'Each class name maps to its own set: nets of a set with a class name join this new (or same-name) net class; if any net already belongs to another class, that side skips class creation, is written per net, and is noted in the log. With both sets filled, the side without a class name expands into individual nets (class-to-net rules). With a single set: a class name only creates the class; without one the nets get net-rule entries. Nets missing on this PCB are skipped.',
+						'np.group': 'Rule group',
+						'np.setA': 'Set A',
+						'np.setB': 'Set B',
+						'np.rule': 'Assign rule',
+						'np.ruleNone': 'This group has no rules yet; create one in "Rule configuration" first.',
+						'np.previewNone': 'The expansion preview appears after you enter the sets.',
+						'np.preview': 'Preview: set A ${1} nets × set B ${2} nets = ${3} pairs',
+						'np.missing': 'Missing nets (will be skipped):',
+						'np.btnWrite': 'Expand and write',
+						'np.importTable': 'Import table (CSV)',
+						'np.resultHint': 'Go back to write another set pair.',
+						'btn.again': 'Write another',
+						'btn.delete': 'Delete',
+						'misc.waiting': 'Waiting for data…',
+						'toast.logCopied': 'Log copied to clipboard',
+						'toast.copyFailed': 'Copy failed; please select the log text manually',
+						'toast.copyFailedDetail': 'Copy failed: '
+					}
+				};
+
+				var lang = 'zh-Hans';
+				function t(key) {
+					var args = Array.prototype.slice.call(arguments, 1);
+					var dict = I18N[lang] || I18N['zh-Hans'];
+					var s = dict[key];
+					if (s === undefined) s = I18N['zh-Hans'][key];
+					if (s === undefined) return key;
+					return s.replace(/\$\{(\d+)\}/g, function (_, i) {
+						var v = args[Number(i) - 1];
+						return v === undefined || v === null ? '' : String(v);
+					});
+				}
+				var model = {
+					seq: 0,
+					state: null,
+					nonce: 'n-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10),
+					owner: null,
+					expanded: {},
+					exportSel: null,
+					exportName: null,
+					np: null,
+					npd: null,
+					npdDrafts: [],
+					npdError: null,
+					npdRuleOpen: false,
+					npdTableImportId: null,
+					log: ''
+				};
+
+				// ---------- 通道 ----------
+				var cmdId = 0;
+				function send(type, payload) {
+					cmdId += 1;
+					try {
+						localStorage.setItem(UI_KEY, JSON.stringify({ id: cmdId, type: type, payload: payload, owner: model.owner || undefined }));
+					} catch (e) { /* 忽略 */ }
+				}
+
+				function poll() {
+					var raw = null;
+					try { raw = localStorage.getItem(HOST_KEY); } catch (e) { return; }
+					if (!raw) return;
+					var msg;
+					try { msg = JSON.parse(raw); } catch (e) { return; }
+					if (!msg || typeof msg.seq !== 'number' || msg.seq <= model.seq) return;
+					if (!msg.owner) return;
+					if (msg.handshake && msg.handshake === model.nonce && !model.owner) model.owner = msg.owner;
+					if (model.owner && msg.owner && msg.owner !== model.owner) return;
+					model.seq = msg.seq;
+					model.state = msg.state || {};
+					onState(msg.state || {});
+				}
+
+				function onState(s) {
+					if (s.lang) lang = s.lang;
+					if (s.modules && !model.exportSel) {
+						model.exportSel = {};
+						for (var i = 0; i < s.modules.length; i++) model.exportSel[s.modules[i].key] = s.modules[i].on;
+					}
+					if (s.view === 'select-export' && model.exportName === null) model.exportName = s.exportFileName || '';
+					if (s.npdTableImported && s.npdTableImported.id !== model.npdTableImportId) {
+						model.npdTableImportId = s.npdTableImported.id;
+						if (s.npdTableImported.error)
+							model.npdError = s.npdTableImported.error;
+						if (s.npdTableImported.drafts && model.npd) {
+							model.npdDrafts = model.npdDrafts.concat(s.npdTableImported.drafts.map(function (row) {
+								return Object.assign({ group: model.npd.group }, row);
+							}));
+							model.npdError = null;
+						}
+					}
+					if (s.netpair && model.np === null) {
+						model.np = { group: s.netpair.group || (s.netpair.groups || [])[0] || '', a: '', b: '', rule: '', classA: '', classB: '' };
+					}
+					model.log = s.log || '';
+					// 预览刷新只局部更新，避免整页重渲染导致输入框失焦
+					if (s.view === 'select-netpair' && s.npPreviewTick && model.np && el('content').querySelector('#npA')) {
+						patchNetPair(s);
+						return;
+					}
+					render();
+				}
+
+				// ---------- 工具 ----------
+				function esc(v) {
+					if (v === null || v === undefined) return '';
+					return String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+				}
+				function el(id) { return document.getElementById(id); }
+				function folderSvg(cls) {
+					return '<svg class="chev ' + cls + '" viewBox="0 0 12 12" aria-hidden="true"><path d="M4 2 L8 6 L4 10" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+				}
+				function kindLabel(kind) { return t('kind.' + kind); }
+				// ---------- 渲染 ----------
+				function render() {
+					var s = model.state || {};
+					if (s.view === 'busy') {
+						el('steps').innerHTML = '';
+						el('content').innerHTML = '<div class="mask"><span class="spinner"></span><span>' + esc(s.busyText || t('busy.default')) + '</span></div>';
+						el('footer').innerHTML = '<span class="footer__left">' + esc(t('busy.footer')) + '</span>'
+							+ '<button class="btn" data-act="close">' + esc(t('btn.cancel')) + '</button>';
+						bind();
+						return;
+					}
+					el('content').classList.toggle('view-export', s.view === 'select-export');
+					var stepIndex = s.view === 'preview' ? 1 : (s.view === 'result' ? 2 : 0);
+					renderSteps(stepIndex, s.mode);
+					if (s.view === 'select-import') { renderSelectImport(s); }
+					else if (s.view === 'select-export') { renderSelectExport(s); }
+					else if (s.view === 'select-netpair') { renderNetPair(s); }
+					else if (s.view === 'preview') { renderPreview(s); }
+					else if (s.view === 'result') { renderResult(s); }
+					else { el('content').innerHTML = '<p>' + esc(t('misc.waiting')) + '</p>'; el('footer').innerHTML = ''; }
+					bind();
+				}
+
+				function renderSteps(active, mode) {
+					var labels = mode === 'netpair'
+						? [t('step.npFill'), t('step.npWrite'), t('step.done')]
+						: (mode === 'export'
+							? [t('step.pickExport'), t('step.export'), t('step.done')]
+							: [t('step.pickImport'), t('step.preview'), t('step.apply')]);
+					var html = '';
+					for (var i = 0; i < labels.length; i++) {
+						var cls = i === active ? 'is-active' : (i < active ? 'is-done' : '');
+						html += '<div class="step ' + cls + '"><span class="step__no">' + (i + 1) + '</span><span>' + esc(labels[i]) + '</span></div>';
+					}
+					el('steps').innerHTML = html;
+				}
+
+				function noticeBox(kind, text) {
+					return '<div class="notice notice--' + kind + '"><div class="notice__text">' + esc(text) + '</div></div>';
+				}
+
+				function renderSelectImport(s) {
+					var html = '';
+					if (s.error) html += noticeBox('error', s.error);
+					html += '<h2>' + esc(t('import.title')) + '</h2>';
+					html += '<p>' + esc(t('import.desc')) + '</p>';
+					if (!s.file) {
+						html += '<div class="panel"><div class="panel__body muted">' + esc(t('import.empty')) + '</div></div>';
+					} else {
+						html += '<div class="panel"><div class="panel__head"><span>' + esc(t('import.fileInfo')) + '</span></div><div class="panel__body">';
+						html += row(t('import.fileName'), '<span class="mono">' + esc(s.file.name) + '</span>');
+						if (s.file.size !== undefined) html += row(t('import.size'), Math.max(1, Math.round(s.file.size / 1024)) + ' KB');
+						html += row(t('import.modules'), esc((s.file.moduleLabels || []).join('、') || '-'));
+						html += row(t('import.unit'), esc(s.file.unit || '-'));
+						if (s.file.edaVersion) html += row(t('import.edaVersion'), esc(s.file.edaVersion));
+						if (s.file.exportedAt) html += row(t('import.exportedAt'), esc(s.file.exportedAt));
+						html += '</div></div>';
+					}
+					if (s.warnings && s.warnings.length) {
+						html += '<div style="margin-top:16px">';
+						for (var i = 0; i < s.warnings.length; i++) html += noticeBox('warn', s.warnings[i]);
+						html += '</div>';
+					}
+					el('content').innerHTML = html;
+					el('footer').innerHTML = '<span class="footer__left">' + esc(t('import.hint')) + '</span>'
+						+ '<button class="btn" data-act="close">' + esc(t('btn.cancel')) + '</button>'
+						+ '<button class="btn btn--primary" data-act="pickFile">' + esc(s.file ? t('btn.repick') : t('btn.pick')) + '</button>'
+						+ '<button class="btn btn--primary" data-act="preview" ' + (s.file ? '' : 'disabled') + '>' + esc(t('btn.preview')) + '</button>';
+				}
+
+				function row(key, valueHtml) {
+					return '<div class="row"><div class="row__key">' + esc(key) + '</div><div class="row__value">' + valueHtml + '</div></div>';
+				}
+
+				function parseNetList(raw) {
+					var seen = {}; var out = [];
+					var parts = String(raw || '').split(/[/,，;；\s]+/);
+					for (var i = 0; i < parts.length; i++) {
+						var name = parts[i].trim();
+						var key = name.toLowerCase();
+						if (name && !seen[key]) { seen[key] = 1; out.push(name); }
+					}
+					return out;
+				}
+
+				function exportSummaryHtml(s) {
+					var sum = s.exportSummary;
+					if (!sum) return '';
+					var sel = function (k) { return !model.exportSel || model.exportSel[k] !== false; };
+					var labels = {};
+					for (var mi = 0; mi < (s.modules || []).length; mi++) labels[s.modules[mi].key] = s.modules[mi].label;
+					var zh = lang === 'zh-Hans';
+					var unit = function (n) { return n + (zh ? ' 条' : ' rule(s)'); };
+					var draftCount = model.npdDrafts.length;
+					var rows = '';
+					var row = function (label, valueHtml) {
+						rows += '<div class="row"><div class="row__key">' + esc(label) + '</div><div class="row__value">' + valueHtml + '</div></div>';
+					};
+					var summaryChips = function (items, key) {
+						var open = !!model.expanded[key];
+						var visible = open ? items : items.slice(0, 4);
+						var html = '<div class="summary-chips">';
+						for (var i = 0; i < visible.length; i++) html += '<span class="summary-chip" title="' + esc(visible[i]) + '">' + esc(visible[i]) + '</span>';
+						if (items.length > 4) {
+							html += '<button class="np-chip summary-toggle" data-act="summaryToggle" data-key="' + esc(key) + '">'
+								+ esc(open ? t('export.collapse') : t('export.expand', items.length)) + '</button>';
+						}
+						return html + '</div>';
+					};
+					if (sel('ruleConfig') && sum.ruleConfigGroups && sum.ruleConfigGroups.length) {
+						var ruleParts = sum.ruleConfigGroups.map(function (item) {
+							return item.label + ' ×' + item.count;
+						});
+						row(labels.ruleConfig, '<div class="muted">' + esc(t('export.ruleTotal', sum.ruleConfigCount)) + '</div>'
+							+ summaryChips(ruleParts, 'sum:ruleConfig'));
+					}
+					if (sel('netClasses') && sum.netClassNames.length) {
+						var names = sum.netClassNames.slice(0, 8).map(esc).join(', ');
+						if (sum.netClassNames.length > 8) names += esc(t('export.andMore', sum.netClassNames.length - 8));
+						row(labels.netClasses, names);
+					}
+					if (sel('netRules') && sum.netRuleCount) {
+						var nrParts = (sum.netRuleGroups || []).map(function (item) {
+							return item.label + ' ×' + item.total + (item.custom ? '（' + t('export.custom', item.custom) + '）' : '');
+						});
+						row(labels.netRules, '<div class="muted">' + esc(unit(sum.netRuleCount)) + '</div>' + summaryChips(nrParts, 'sum:netRules'));
+					}
+					var groupKeys = Object.keys(sum.netByNetGroups || {});
+					if ((sel('netByNetRules') && groupKeys.length) || draftCount) {
+						var parts = [];
+						if (sel('netByNetRules')) {
+							for (var gi = 0; gi < groupKeys.length; gi++) parts.push(esc(groupKeys[gi]) + ' ×' + sum.netByNetGroups[groupKeys[gi]]);
+						}
+						if (draftCount) parts.push(esc(t('export.withDrafts', draftCount)));
+						row(labels.netByNetRules, summaryChips(parts, 'sum:netByNetRules'));
+					}
+					if (sel('differentialPairs') && sum.differentialPairCount) row(labels.differentialPairs, unit(sum.differentialPairCount));
+					if (sel('equalLengthGroups') && sum.equalLengthGroupCount) row(labels.equalLengthGroups, unit(sum.equalLengthGroupCount));
+					if (!rows) return '<div class="panel"><div class="panel__head"><span>' + esc(t('export.summaryTitle')) + '</span></div><div class="panel__body"><span class="muted">' + esc(t('export.summaryEmpty')) + '</span></div></div>';
+					return '<div class="panel"><div class="panel__head"><span>' + esc(t('export.summaryTitle')) + '</span></div><div class="panel__body">' + rows + '</div></div>';
+				}
+
+				function npdPanelHtml(s) {
+					var np = s.npMeta || { groups: [], rules: {} };
+					var m = model.npd || (model.npd = { group: '', rule: '', a: '', b: '', classA: '', classB: '' });
+					m.group = 'Safe Spacing';
+					var rules = (np.rules || {})[m.group] || [];
+					if (rules.length && rules.indexOf(m.rule) < 0) m.rule = rules[0];
+					var html = '<div class="panel"><div class="panel__head"><span>' + esc(t('npd.title')) + '</span>';
+					if (model.npdDrafts.length) html += '<span class="muted">' + esc(t('npd.draftCount', model.npdDrafts.length)) + '</span>';
+					html += '</div><div class="panel__body">';
+					if (model.npdError) html += noticeBox('error', model.npdError);
+					if (!rules.length) {
+						html += noticeBox('warn', t('np.ruleNone')) + '</div></div>';
+						return html;
+					}
+					html += '<div class="np-input-grid">'
+						+ '<div><div class="field-label">' + esc(t('np.setA')) + '</div><textarea class="input np-area" id="npdA" spellcheck="false">' + esc(m.a) + '</textarea></div>'
+						+ '<div><div class="field-label">' + esc(t('np.setB')) + '</div><textarea class="input np-area" id="npdB" spellcheck="false">' + esc(m.b) + '</textarea></div>'
+						+ '<div><div class="field-label">' + esc(t('npd.classA')) + '</div><input class="input" id="npdClassA" value="' + esc(m.classA || '') + '"></div>'
+						+ '<div><div class="field-label">' + esc(t('npd.classB')) + '</div><input class="input" id="npdClassB" value="' + esc(m.classB || '') + '"></div>'
+						+ '</div>';
+					html += '<div class="np-actions">'
+						+ '<div class="np-action-cluster">'
+						+ '<div class="np-select"><button class="np-select-trigger" data-act="npdRuleToggle"' + (rules.length ? '' : ' disabled') + '>'
+						+ '<span class="np-select-label">' + esc(t('np.rule')) + '</span>'
+						+ '<span class="np-select-value">' + esc(m.rule || '') + '</span>'
+						+ '<span class="np-select-arrow"></span></button>';
+					if (model.npdRuleOpen) {
+						html += '<div class="np-select-menu">';
+						for (var r = 0; r < rules.length; r++) {
+							var ruleKey = rules[r];
+							html += '<button class="np-select-option' + (ruleKey === m.rule ? ' is-selected' : '') + '" data-act="npdRule" data-rule="' + esc(ruleKey) + '">' + esc(ruleKey) + '</button>';
+						}
+						html += '</div>';
+					}
+					html += '</div><button class="btn np-add" data-act="npdAdd">' + esc(t('npd.add')) + '</button></div>'
+						+ '<button class="btn" data-act="npdTableImport">' + esc(t('npd.importTable')) + '</button></div>';
+					if (model.npdDrafts.length) {
+						html += '<div class="np-drafts">';
+						for (var di = 0; di < model.npdDrafts.length; di++) {
+							var d = model.npdDrafts[di];
+							var itemText = d.aNets.length && d.bNets.length
+								? t('npd.item', d.group, d.rule, d.aNets.length, d.bNets.length)
+								: t('npd.itemSingle', d.group, d.rule, d.aNets.length ? 'A' : 'B', (d.aNets.length ? d.aNets : d.bNets).length);
+							var suffixes = [];
+							if (d.aClass) suffixes.push('A→' + t('npd.toClass', d.aClass));
+							if (d.bClass) suffixes.push('B→' + t('npd.toClass', d.bClass));
+							var singleFilledWithoutClass = !(d.aNets.length && d.bNets.length)
+								&& !(d.aNets.length ? d.aClass : d.bClass);
+							if (singleFilledWithoutClass) suffixes.push(t('npd.toNetRules'));
+							if (suffixes.length) itemText += ' · ' + suffixes.join('，');
+							html += '<div class="np-draft"><span>' + esc(itemText) + '</span>'
+								+ '<button class="np-chip" data-act="npdDel" data-index="' + di + '">' + esc(t('btn.delete')) + '</button></div>';
+						}
+						html += '</div>';
+					} else {
+						html += '<div class="np-drafts"><div class="np-draft muted">' + esc(t('npd.empty')) + '</div></div>';
+					}
+					return html + '</div></div>';
+				}
+
+				function renderSelectExport(s) {
+					var modulesHtml = '<div class="check-row">';
+					for (var i = 0; i < s.modules.length; i++) {
+						var m = s.modules[i];
+						var on = model.exportSel ? model.exportSel[m.key] !== false : m.on;
+						modulesHtml += '<label class="check"><input type="checkbox" class="cb" data-mod="' + esc(m.key) + '" ' + (on ? 'checked' : '') + '><span class="check__text">' + esc(m.label) + '</span></label>';
+					}
+					modulesHtml += '</div>';
+					var fileHtml = '<input class="input" id="fileName" value="' + esc(model.exportName !== null ? model.exportName : s.exportFileName || '') + '">';
+					var html = '<div class="export-layout"><div class="export-top">'
+						+ '<div class="panel"><div class="panel__head"><span>' + esc(t('export.modules')) + '</span><span class="muted">' + esc(t('export.remembered')) + '</span></div><div class="panel__body">' + modulesHtml + '</div></div>'
+						+ '<div class="panel"><div class="panel__head"><span>' + esc(t('export.fileName')) + '</span></div><div class="panel__body">' + fileHtml + '</div></div>'
+						+ '</div><div class="export-main">' + npdPanelHtml(s) + '</div><div class="export-side">';
+					if (s.error) html += noticeBox('error', s.error);
+					html += exportSummaryHtml(s) + '</div></div>';
+					el('content').innerHTML = html;
+					el('footer').innerHTML = '<span class="footer__left">' + esc(t('export.hint')) + '</span>'
+						+ '<button class="btn" data-act="close">' + esc(t('btn.cancel')) + '</button>'
+						+ '<button class="btn btn--primary" data-act="export">' + esc(t('btn.export')) + '</button>';
+				}
+
+				function npPreviewHtml(p) {
+					if (!p) return '<div class="np-preview" style="margin-top:16px">' + esc(t('np.previewNone')) + '</div>';
+					var html = '<div class="np-preview" style="margin-top:16px"><strong>' + esc(t('np.preview', p.aCount, p.bCount, p.total)) + '</strong>';
+					var miss = (p.missingA || []).concat(p.missingB || []);
+					if (miss.length) html += '<div style="margin-top:8px">' + noticeBox('warn', t('np.missing') + ' ' + miss.join(', ')) + '</div>';
+					return html + '</div>';
+				}
+				function patchNetPair(s) {
+					var np = s.netpair || {};
+					var p = np.preview;
+					var box = el('content').querySelector('#npPreview');
+					if (box) box.outerHTML = '<div id="npPreview">' + npPreviewHtml(p) + '</div>';
+					var btn = el('footer').querySelector('[data-act="applyNetPair"]');
+					if (btn) {
+						var m = model.np;
+						var rules = (np.rules || {})[m.group] || [];
+						btn.disabled = !(p && p.total > 0 && m && !!m.rule && rules.indexOf(m.rule) >= 0);
+					}
+				}
+				function renderNetPair(s) {
+					var np = s.netpair || {};
+					var m = model.np || { group: '', a: '', b: '', rule: '', classA: '', classB: '' };
+					var html = '';
+					if (s.error) html += noticeBox('error', s.error);
+					html += '<h2>' + esc(t('np.title')) + '</h2>';
+					html += '<p>' + esc(t('np.desc')) + '</p>';
+					var groups = np.groups || [];
+					if (groups.length) {
+						html += '<div class="row"><div class="row__key">' + esc(t('np.group')) + '</div><div class="row__value"><div class="np-chips">';
+						for (var i = 0; i < groups.length; i++) {
+							var g = groups[i];
+							var active = m.group ? m.group === g : i === 0;
+							html += '<button class="np-chip' + (active ? ' is-active' : '') + '" data-act="npGroup" data-group="' + esc(g) + '">' + esc(g) + '</button>';
+						}
+						html += '</div></div></div>';
+					}
+					html += '<div style="margin-top:16px"><div class="row"><div class="row__key">' + esc(t('np.setA')) + '</div>'
+						+ '<div class="row__value"><textarea class="input np-area" id="npA" spellcheck="false">' + esc(m.a) + '</textarea></div></div>';
+					html += '<div class="row"><div class="row__key">' + esc(t('npd.classA')) + '</div>'
+						+ '<div class="row__value"><input class="input" id="npClassA" value="' + esc(m.classA || '') + '"></div></div>';
+					html += '<div class="row"><div class="row__key">' + esc(t('np.setB')) + '</div>'
+						+ '<div class="row__value"><textarea class="input np-area" id="npB" spellcheck="false">' + esc(m.b) + '</textarea></div></div>';
+					html += '<div class="row"><div class="row__key">' + esc(t('npd.classB')) + '</div>'
+						+ '<div class="row__value"><input class="input" id="npClassB" value="' + esc(m.classB || '') + '">'
+						+ '<div class="muted" style="margin-top:4px">' + esc(t('npd.classDesc')) + '</div></div></div>';
+					var rules = (np.rules || {})[m.group] || [];
+					if (rules.length && rules.indexOf(m.rule) < 0) { m.rule = rules[0]; }
+					html += '<div class="row"><div class="row__key">' + esc(t('np.rule')) + '</div><div class="row__value">';
+					if (rules.length) {
+						html += '<div class="np-chips">';
+						for (var r = 0; r < rules.length; r++) {
+							var ruleKey = rules[r];
+							html += '<button class="np-chip' + (ruleKey === m.rule ? ' is-active' : '') + '" data-act="npRule" data-rule="' + esc(ruleKey) + '">' + esc(ruleKey) + '</button>';
+						}
+						html += '</div>';
+					} else {
+						html += noticeBox('warn', t('np.ruleNone'));
+					}
+					html += '</div></div></div>';
+					html += '<div id="npPreview">' + npPreviewHtml(np.preview) + '</div>';
+					el('content').innerHTML = html;
+					var ready = np.preview && np.preview.total > 0 && !!m.rule && rules.indexOf(m.rule) >= 0;
+					el('footer').innerHTML = '<span class="footer__left"></span>'
+						+ '<button class="btn" data-act="npTableImport">' + esc(t('np.importTable')) + '</button>'
+						+ '<button class="btn" data-act="close">' + esc(t('btn.cancel')) + '</button>'
+						+ '<button class="btn btn--primary" data-act="applyNetPair" ' + (ready ? '' : 'disabled') + '>' + esc(t('np.btnWrite')) + '</button>';
+				}
+				function renderPreview(s) {
+					var d = s.diff || { summary: {}, groups: [], warnings: [] };
+					var sum = d.summary || {};
+					var html = '';
+					if (s.error) html += noticeBox('error', s.error);
+					html += '<div class="stats">';
+					html += stat('added', t('kind.added'), sum.added);
+					html += stat('modified', t('kind.modified'), sum.modified);
+					html += stat('removed', t('kind.removed'), sum.removed);
+					html += stat('kept', t('kind.kept'), sum.kept);
+					html += stat('skipped', t('kind.skipped'), sum.skipped);
+					html += stat('unsupported', t('kind.unsupported'), sum.unsupported);
+					html += '</div>';
+					var warnings = d.warnings || [];
+					for (var i = 0; i < warnings.length; i++) html += noticeBox('warn', warnings[i]);
+					if (!d.groups.length && !warnings.length) {
+						html += noticeBox('success', t('preview.same'));
+					}
+					var changed = (sum.added || 0) + (sum.modified || 0) + (sum.removed || 0);
+					html += '<h2>' + esc(t('preview.title')) + esc(changed ? t('preview.willWrite', changed) : '') + '</h2>';
+					html += '<div class="tree">';
+					html += '<div class="tree__row tree__row--group" data-act="toggleAll" style="justify-content:space-between"><span>' + esc(t('preview.groups', d.groups.length)) + '</span><span class="muted" data-act="toggleAll">' + esc(t('preview.expandAll')) + '</span></div>';
+					for (var g = 0; g < d.groups.length; g++) html += renderGroup(d.groups[g]);
+					html += '</div>';
+					el('content').innerHTML = html;
+					el('footer').innerHTML = '<span class="footer__left">' + esc(t('preview.hint')) + '</span>'
+						+ '<button class="btn" data-act="restart">' + esc(t('btn.back')) + '</button>'
+						+ '<button class="btn btn--primary" data-act="applyImport">' + esc(t('btn.apply')) + '</button>';
+				}
+
+				function stat(cls, key, n) {
+					return '<div class="stat stat--' + cls + '"><div class="stat__n">' + (n || 0) + '</div><div class="stat__k">' + esc(key) + '</div></div>';
+				}
+
+				function renderGroup(group) {
+					var key = 'g:' + group.module;
+					var open = !!model.expanded[key];
+					var html = '<div class="tree__row tree__row--group tree__row--clickable" data-toggle="' + esc(key) + '">'
+						+ folderSvg(open ? 'chev--open' : '')
+						+ '<span class="tree__main">' + esc(group.label) + ' <span class="muted">(' + group.count + ')</span></span></div>';
+					if (!open) return html;
+					for (var i = 0; i < group.entries.length; i++) {
+						var e = group.entries[i];
+						var ekey = key + ':' + i;
+						var hasFields = e.fields && e.fields.length;
+						var hasDetail = e.detail && e.detail.length;
+						var eopen = !!model.expanded[ekey];
+						var expandable = hasFields || hasDetail;
+						html += '<div class="tree__row tree__row--entry tree__indent ' + (expandable ? 'tree__row--clickable' : '') + '" data-toggle="' + esc(ekey) + '">'
+							+ folderSvg(expandable ? (eopen ? 'chev--open' : '') : 'chev--hidden')
+							+ '<span class="tag tag--' + esc(e.kind) + '">' + esc(kindLabel(e.kind)) + '</span>'
+							+ '<span class="tree__main">' + esc(e.path) + (e.note ? ' <span class="tree__note">— ' + esc(e.note) + '</span>' : '') + '</span></div>';
+						if (eopen && hasDetail) {
+							for (var di = 0; di < e.detail.length; di++) {
+								html += '<div class="tree__row tree__row--field tree__indent2"><span class="tree__main">' + esc(e.detail[di]) + '</span></div>';
+							}
+						}
+						if (eopen && hasFields) {
+							for (var f = 0; f < e.fields.length; f++) {
+								var fd = e.fields[f];
+								html += '<div class="tree__row tree__row--field tree__indent2"><span class="tree__main">' + esc(fd.path) + '：'
+									+ esc(JSON.stringify(fd.right)) + ' → ' + esc(JSON.stringify(fd.left)) + '</span></div>';
+							}
+						}
+					}
+					return html;
+				}
+				function renderResult(s) {
+					var html = '';
+					var allOk = true;
+					for (var i = 0; i < (s.steps || []).length; i++) if (!s.steps[i].ok) allOk = false;
+					var headline = s.restored
+						? t('result.restored')
+						: (s.mode === 'export' ? t('result.exportDone') : (s.mode === 'netpair' ? (allOk ? t('result.netpairDone') : t('result.importPartial')) : (allOk ? t('result.importDone') : t('result.importPartial'))));
+					var kind = s.error ? 'error' : (allOk ? 'success' : 'warn');
+					html += noticeBox(kind, s.error || headline);
+					html += '<h2>' + esc(headline) + '</h2>';
+					if (s.savedName) html += '<p>' + esc(t('result.saved')) + '<span class="mono">' + esc(s.savedName) + '</span></p>';
+					var steps = s.steps || [];
+					if (steps.length) {
+						html += '<div class="tree">';
+						for (var j = 0; j < steps.length; j++) {
+							var st = steps[j];
+							html += '<div class="tree__row"><span class="tag ' + (st.ok ? 'tag--ok' : 'tag--fail') + '">' + esc(st.ok ? t('result.ok') : t('result.fail')) + '</span>'
+								+ '<span class="tree__main">' + esc(st.label) + (st.error ? ' <span class="tree__note">— ' + esc(st.error) + '</span>' : '')
+								+ (st.detail ? ' <span class="tree__note">' + esc(typeof st.detail === 'string' ? st.detail : JSON.stringify(st.detail)) + '</span>' : '') + '</span></div>';
+						}
+						html += '</div>';
+					}
+					var r = s.residualSummary;
+					if (r) {
+						var left = (r.added || 0) + (r.modified || 0) + (r.removed || 0) + (r.skipped || 0) + (r.unsupported || 0);
+						html += '<div style="margin-top:16px">' + (left
+							? noticeBox('warn', t('result.residualLeft', left, r.added, r.modified, r.removed, r.skipped, r.unsupported))
+							: noticeBox('success', t('result.residualNone'))) + '</div>';
+					}
+					var warnings = s.warnings || [];
+					if (warnings.length) {
+						html += '<div style="margin-top:16px">';
+						for (var w = 0; w < warnings.length; w++) html += noticeBox('warn', warnings[w]);
+						html += '</div>';
+					}
+					if (s.log) html += '<h2 style="margin-top:16px">' + esc(t('result.log')) + '</h2><pre class="log">' + esc(s.log) + '</pre>';
+					el('content').innerHTML = html;
+					var footer = '<span class="footer__left">' + esc(s.mode === 'export' ? t('result.exportHint') : (s.mode === 'netpair' ? t('np.resultHint') : t('result.importHint'))) + '</span>';
+					if ((s.mode === 'import' || s.mode === 'netpair') && s.hasSnapshot) {
+						footer += '<button class="btn" data-act="restore">' + esc(t('btn.restore')) + '</button>';
+					}
+					if (s.mode === 'netpair') {
+						footer += '<button class="btn" data-act="restart">' + esc(t('btn.again')) + '</button>';
+					}
+					footer += '<button class="btn" data-act="copyLog">' + esc(t('btn.copyLog')) + '</button>'
+						+ '<button class="btn btn--primary" data-act="close">' + esc(t('btn.done')) + '</button>';
+					el('footer').innerHTML = footer;
+				}
+
+				// ---------- 交互 ----------
+				var bound = false;
+				function bind() {
+					if (bound) return;
+					bound = true;
+					el('content').addEventListener('click', function (ev) {
+						var clickedOutsideDropdown = false;
+						if (!ev.target.closest('.np-select') && model.npdRuleOpen) {
+							model.npdRuleOpen = false;
+							clickedOutsideDropdown = true;
+						}
+						var node = ev.target.closest('[data-toggle]');
+						if (node) {
+							var key = node.getAttribute('data-toggle');
+							model.expanded[key] = !model.expanded[key];
+							render();
+							return;
+						}
+						var all = ev.target.closest('[data-act="toggleAll"]');
+						if (all) {
+							var anyClosed = false;
+							var d = (model.state.diff || { groups: [] });
+							for (var i = 0; i < d.groups.length; i++) if (!model.expanded['g:' + d.groups[i].module]) anyClosed = true;
+							for (var j = 0; j < d.groups.length; j++) model.expanded['g:' + d.groups[j].module] = anyClosed;
+							render();
+						}
+						var summaryToggle = ev.target.closest('[data-act="summaryToggle"]');
+						if (summaryToggle) {
+							var key = summaryToggle.getAttribute('data-key') || '';
+							model.expanded[key] = !model.expanded[key];
+							render();
+							return;
+						}
+						var chip = ev.target.closest('[data-act="npGroup"]');
+						if (chip) {
+							if (model.np) model.np.group = chip.getAttribute('data-group') || '';
+							send('netpairGroup', { group: model.np ? model.np.group : '' });
+						}
+						var ruleChip = ev.target.closest('[data-act="npRule"]');
+						if (ruleChip) {
+							if (model.np) model.np.rule = ruleChip.getAttribute('data-rule') || '';
+							send('netpairRule', { rule: model.np ? model.np.rule : '' });
+						}
+						var npdRuleToggle = ev.target.closest('[data-act="npdRuleToggle"]');
+						if (npdRuleToggle) {
+							model.npdRuleOpen = !model.npdRuleOpen;
+							render();
+							return;
+						}
+						var npdRule = ev.target.closest('[data-act="npdRule"]');
+						if (npdRule) {
+							if (model.npd) model.npd.rule = npdRule.getAttribute('data-rule') || '';
+							model.npdRuleOpen = false;
+							render();
+							return;
+						}
+						if (ev.target.closest('[data-act="npdAdd"]')) { addNpdDraft(); return; }
+						var npdDel = ev.target.closest('[data-act="npdDel"]');
+						if (npdDel) {
+							var idx = Number(npdDel.getAttribute('data-index'));
+							if (!isNaN(idx) && idx >= 0) model.npdDrafts.splice(idx, 1);
+							render();
+							return;
+						}
+						var npdTableBtn = ev.target.closest('[data-act="npdTableImport"]');
+						if (npdTableBtn) { handleAction('npdTableImport', npdTableBtn); }
+						if (clickedOutsideDropdown) render();
+					});
+					el('content').addEventListener('change', function (ev) {
+						var cb = ev.target.closest('input[data-mod]');
+						if (cb) {
+							if (!model.exportSel) model.exportSel = {};
+							model.exportSel[cb.getAttribute('data-mod')] = cb.checked;
+							if (clickedOutsideDropdown) {
+								render();
+								return;
+							}
+							var side = el('content').querySelector('.export-side');
+							if (side) {
+								var s = model.state || {};
+								side.innerHTML = (s.error ? noticeBox('error', s.error) : '') + exportSummaryHtml(s);
+							}
+							return;
+						}
+						var nameInput = ev.target.closest('#fileName');
+						if (nameInput) model.exportName = nameInput.value;
+					});
+					el('content').addEventListener('input', function (ev) {
+						var nameInput = ev.target.closest('#fileName');
+						if (nameInput) model.exportName = nameInput.value;
+						var npField = ev.target.closest('#npA') || ev.target.closest('#npB');
+						if (npField && model.np) {
+							if (npField.id === 'npA') model.np.a = npField.value;
+							if (npField.id === 'npB') model.np.b = npField.value;
+							send('netpairInput', { a: model.np.a, b: model.np.b, rule: model.np.rule });
+						}
+						var npClassAInput = ev.target.closest('#npClassA');
+						var npClassBInput = ev.target.closest('#npClassB');
+						if (npClassAInput && model.np) model.np.classA = npClassAInput.value;
+						if (npClassBInput && model.np) model.np.classB = npClassBInput.value;
+						var npdField = ev.target.closest('#npdA') || ev.target.closest('#npdB');
+						if (npdField && model.npd) {
+							if (npdField.id === 'npdA') model.npd.a = npdField.value;
+							if (npdField.id === 'npdB') model.npd.b = npdField.value;
+						}
+						var npdClassAInput = ev.target.closest('#npdClassA');
+						var npdClassBInput = ev.target.closest('#npdClassB');
+						if (npdClassAInput && model.npd) model.npd.classA = npdClassAInput.value;
+						if (npdClassBInput && model.npd) model.npd.classB = npdClassBInput.value;
+					});
+					el('footer').addEventListener('click', function (ev) {
+						var btn = ev.target.closest('[data-act]');
+						if (!btn) return;
+						handleAction(btn.getAttribute('data-act'), btn);
+					});
+				}
+
+				function handleAction(act, btn) {
+					model.npdRuleOpen = false;
+					if (act === 'close') { send('close'); return; }
+					if (act === 'pickFile') { send('pickFile'); return; }
+					if (act === 'preview') { send('preview'); return; }
+					if (act === 'applyImport') { send('applyImport'); return; }
+					if (act === 'restore') { send('restore'); return; }
+					if (act === 'restart') {
+						model.exportSel = null;
+						model.exportName = null;
+						model.np = null;
+						model.npdDrafts = [];
+						model.npdError = null;
+						model.npd = null;
+						send('restart');
+						return;
+					}
+					if (act === 'copyLog') { copyText(model.log || ''); return; }
+					if (act === 'applyNetPair') {
+						var aEl = el('content').querySelector('#npA');
+						var bEl = el('content').querySelector('#npB');
+						var classAEl = el('content').querySelector('#npClassA');
+						var classBEl = el('content').querySelector('#npClassB');
+						send('applyNetPair', {
+							group: model.np ? model.np.group : '',
+							a: aEl ? aEl.value : (model.np ? model.np.a : ''),
+							b: bEl ? bEl.value : (model.np ? model.np.b : ''),
+							rule: model.np ? model.np.rule : '',
+							classA: classAEl ? classAEl.value : (model.np ? model.np.classA || '' : ''),
+							classB: classBEl ? classBEl.value : (model.np ? model.np.classB || '' : '')
+						});
+						return;
+					}
+					if (act === 'npdTableImport') {
+						send('npdTableImport', { group: model.npd ? model.npd.group : '' });
+						return;
+					}
+					if (act === 'npTableImport') {
+						send('npTableImport');
+						return;
+					}
+					if (act === 'export') {
+						var mods = [];
+						if (model.exportSel) { for (var k in model.exportSel) if (model.exportSel[k]) mods.push(k); }
+						var input = el('content').querySelector('#fileName');
+						var name = input ? input.value : model.exportName;
+						send('export', { modules: mods, fileName: name, pairDrafts: model.npdDrafts });
+						return;
+					}
+				}
+
+				function addNpdDraft() {
+					var m = model.npd || (model.npd = { group: '', rule: '', a: '', b: '', classA: '', classB: '' });
+					var s = model.state || {};
+					var rules = ((s.npMeta || {}).rules || {})[m.group] || [];
+					var aNets = parseNetList(m.a);
+					var bNets = parseNetList(m.b);
+					if (!m.group || rules.indexOf(m.rule) < 0) {
+						model.npdError = t('np.ruleNone');
+						render();
+						return;
+					}
+					if (!aNets.length && !bNets.length) {
+						model.npdError = t('npd.needNets');
+						render();
+						return;
+					}
+					model.npdError = null;
+					model.npdDrafts.push({
+						group: m.group,
+						rule: m.rule,
+						aNets: aNets,
+						bNets: bNets,
+						aClass: String(m.classA || '').trim() || undefined,
+						bClass: String(m.classB || '').trim() || undefined,
+					});
+					m.a = '';
+					m.b = '';
+					m.classA = '';
+					m.classB = '';
+					render();
+				}
+
+				function copyText(text) {
+					try {
+						var ta = document.createElement('textarea');
+						ta.value = text;
+						ta.setAttribute('readonly', 'readonly');
+						ta.style.position = 'fixed';
+						ta.style.left = '-9999px';
+						document.body.appendChild(ta);
+						ta.select();
+						var ok = document.execCommand('copy');
+						document.body.removeChild(ta);
+						send('toast', { message: ok ? t('toast.logCopied') : t('toast.copyFailed') });
+					} catch (e) {
+						send('toast', { message: t('toast.copyFailedDetail') + String(e) });
+					}
+				}
+
+				// ---------- 启动 ----------
+				window.addEventListener('storage', function (ev) { if (ev && ev.key === HOST_KEY) poll(); });
+				setInterval(poll, 150);
+				send('ready', { nonce: model.nonce });
+			})();
+		</script>
+	</body>
+</html>

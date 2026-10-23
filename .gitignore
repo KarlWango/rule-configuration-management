@@ -1,0 +1,14 @@
+/.vscode/*
+!/.vscode/extensions.json
+!/.vscode/settings.json
+/coverage/
+/node_modules/
+/.eslintcache
+debug.log
+
+# local scratch / probe artifacts (browser profiles) - never publish
+/.probe/
+/tmp/
+/output/
+/build/dev/rcm-dev.js
+/iframe/probe.html

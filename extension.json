@@ -1,0 +1,86 @@
+{
+	"name": "rule-configuration-management",
+	"uuid": "391ccce5208645c08aca90afcefcf819",
+	"displayName": "规则配置管理",
+	"description": "把当前 PCB 的设计规则导出成 JSON，再迁移到其他 PCB；支持批量维护网络集合规则。",
+	"version": "1.0.0",
+	"publisher": "karl",
+	"engines": {
+		"eda": ">=3.2.0"
+	},
+	"license": "Apache-2.0",
+	"repository": {
+		"type": "github",
+		"url": "https://github.com/KarlWango/rule-configuration-management"
+	},
+	"categories": "PCB",
+	"keywords": [
+		"PCB",
+		"DRC",
+		"Rule"
+	],
+	"images": {
+		"logo": "./images/logo.png"
+	},
+	"homepage": "https://github.com/KarlWango/rule-configuration-management",
+	"bugs": "https://github.com/KarlWango/rule-configuration-management/issues",
+	"activationEvents": {},
+	"entry": "./dist/index",
+	"dependentExtensions": {},
+	"headerMenus": {
+		"home": [
+			{
+				"id": "ruleConfigMenuHome",
+				"title": "规则配置",
+				"menuItems": [
+					{
+						"id": "AboutHome",
+						"title": "关于规则配置管理",
+						"registerFn": "about"
+					}
+				]
+			}
+		],
+		"sch": [
+			{
+				"id": "ruleConfigMenuSch",
+				"title": "规则配置",
+				"menuItems": [
+					{
+						"id": "AboutSch",
+						"title": "关于规则配置管理",
+						"registerFn": "about"
+					}
+				]
+			}
+		],
+		"pcb": [
+			{
+				"id": "ruleConfigMenuPcb",
+				"title": "规则配置",
+				"menuItems": [
+					{
+						"id": "ExportRuleConfig",
+						"title": "导出设计规则配置…",
+						"registerFn": "exportRuleConfig"
+					},
+					{
+						"id": "ImportRuleConfig",
+						"title": "导入设计规则配置…",
+						"registerFn": "importRuleConfig"
+					},
+					{
+						"id": "NetPairRules",
+						"title": "网络集合规则…",
+						"registerFn": "netPairRules"
+					},
+					{
+						"id": "AboutPcb",
+						"title": "关于规则配置管理",
+						"registerFn": "about"
+					}
+				]
+			}
+		]
+	}
+}

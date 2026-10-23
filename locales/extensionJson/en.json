@@ -1,0 +1,9 @@
+{
+	"规则配置": "Rule configuration",
+	"导出设计规则配置…": "Export design rule configuration…",
+	"导入设计规则配置…": "Import design rule configuration…",
+	"关于规则配置管理": "About Rule Configuration Manager",
+	"规则配置管理": "Rule Configuration Manager",
+	"把当前 PCB 的设计规则导出成 JSON，再迁移到其他 PCB；支持批量维护网络集合规则。": "Export PCB design rules as JSON, reuse them on other PCBs, and manage net-set rules in bulk.",
+	"用于管理嘉立创 EDA 专业版中的规则配置": "Manage design rule configurations in EasyEDA"
+}
