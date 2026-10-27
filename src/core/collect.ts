@@ -85,7 +85,7 @@ export function buildConfigSet(collected: CollectResult, modules: ModuleKey[], m
 	return {
 		schema: SCHEMA_ID,
 		schemaVersion: SCHEMA_VERSION,
-		generator: meta.generator || { name: 'rule-configuration-management', version: '1.0.0' },
+		generator: meta.generator || { name: 'rule-configuration-management', version: '1.0.1' },
 		edaVersion: meta.edaVersion,
 		exportedAt: nowIso(),
 		source: { pcb: meta.pcbName, unit: collected.unit, ruleConfigName: collected.ruleConfigName },

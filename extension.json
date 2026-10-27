@@ -3,7 +3,7 @@
 	"uuid": "391ccce5208645c08aca90afcefcf819",
 	"displayName": "规则配置管理",
 	"description": "把当前 PCB 的设计规则导出成 JSON，再迁移到其他 PCB；支持批量维护网络集合规则。",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"publisher": "karl",
 	"engines": {
 		"eda": ">=3.2.0"

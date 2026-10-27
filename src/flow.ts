@@ -29,7 +29,7 @@ export const IFRAME_ID = 'rcm-wizard';
 export const IFRAME_FILE = '/iframe/index.html';
 const WINDOW_W = 1020;
 const WINDOW_H = 720;
-const GENERATOR = { name: 'rule-configuration-management', version: '1.0.0' };
+const GENERATOR = { name: 'rule-configuration-management', version: '1.0.1' };
 
 type Mode = 'import' | 'export' | 'netpair';
 

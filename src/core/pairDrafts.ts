@@ -16,7 +16,7 @@ export interface PairDraft {
  * 把附加草稿并入导出文件（不做当前 PCB 网络校验，导入时与目标板求交）：
  * - 两侧集合都有：网络对条目，集合上可各自声明 className；
  * - 只填一个集合 + 类名：仅建类 / 补成员（single 标记），不产生网络对；
- * - 只填一个集合、无类名：作为「网络规则」条目写入文件。
+ * - 只填一个集合、无类名：作为「网络规则」条目写入文件，并分配所选规则。
  */
 export function appendPairDrafts(file: RuleConfigSet, drafts: PairDraft[]): void {
 	if (!drafts.length)
@@ -49,8 +49,11 @@ export function appendPairDrafts(file: RuleConfigSet, drafts: PairDraft[]): void
 		else {
 			file.data.netRules = file.data.netRules || [];
 			for (const net of nets) {
-				if (!file.data.netRules.some(entry => entry.type === 'net' && String(entry.name).toLowerCase() === net.toLowerCase()))
-					file.data.netRules.push({ type: 'net', name: net });
+				const existing = file.data.netRules.find(entry => entry.type === 'net' && String(entry.name).toLowerCase() === net.toLowerCase());
+				if (!existing)
+					file.data.netRules.push({ type: 'net', name: net, [draft.group]: draft.rule });
+				else if (existing[draft.group] === undefined)
+					existing[draft.group] = draft.rule;
 			}
 			if (!file.modules.includes('netRules'))
 				file.modules.push('netRules');

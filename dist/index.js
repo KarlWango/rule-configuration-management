@@ -34,7 +34,7 @@ var edaEsbuildExportName = (() => {
     uuid: "391ccce5208645c08aca90afcefcf819",
     displayName: "\u89C4\u5219\u914D\u7F6E\u7BA1\u7406",
     description: "\u628A\u5F53\u524D PCB \u7684\u8BBE\u8BA1\u89C4\u5219\u5BFC\u51FA\u6210 JSON\uFF0C\u518D\u8FC1\u79FB\u5230\u5176\u4ED6 PCB\uFF1B\u652F\u6301\u6279\u91CF\u7EF4\u62A4\u7F51\u7EDC\u96C6\u5408\u89C4\u5219\u3002",
-    version: "1.0.0",
+    version: "1.0.1",
     publisher: "karl",
     engines: {
       eda: ">=3.2.0"
@@ -427,7 +427,7 @@ var edaEsbuildExportName = (() => {
     return {
       schema: SCHEMA_ID,
       schemaVersion: SCHEMA_VERSION,
-      generator: meta.generator || { name: "rule-configuration-management", version: "1.0.0" },
+      generator: meta.generator || { name: "rule-configuration-management", version: "1.0.1" },
       edaVersion: meta.edaVersion,
       exportedAt: nowIso(),
       source: { pcb: meta.pcbName, unit: collected.unit, ruleConfigName: collected.ruleConfigName },
@@ -1796,8 +1796,11 @@ var edaEsbuildExportName = (() => {
       } else {
         file.data.netRules = file.data.netRules || [];
         for (const net of nets) {
-          if (!file.data.netRules.some((entry) => entry.type === "net" && String(entry.name).toLowerCase() === net.toLowerCase()))
-            file.data.netRules.push({ type: "net", name: net });
+          const existing = file.data.netRules.find((entry) => entry.type === "net" && String(entry.name).toLowerCase() === net.toLowerCase());
+          if (!existing)
+            file.data.netRules.push({ type: "net", name: net, [draft.group]: draft.rule });
+          else if (existing[draft.group] === void 0)
+            existing[draft.group] = draft.rule;
         }
         if (!file.modules.includes("netRules"))
           file.modules.push("netRules");
@@ -2066,7 +2069,7 @@ var edaEsbuildExportName = (() => {
   var IFRAME_FILE = "/iframe/index.html";
   var WINDOW_W = 1020;
   var WINDOW_H = 720;
-  var GENERATOR = { name: "rule-configuration-management", version: "1.0.0" };
+  var GENERATOR = { name: "rule-configuration-management", version: "1.0.1" };
   function pad2(n) {
     return String(n).padStart(2, "0");
   }
